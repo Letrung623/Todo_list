@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   CUSTOM CSS CHO REACT-CALENDAR
+========================================= */
+.custom-calendar .react-calendar {
+  border: none !important;
+  font-family: inherit !important;
+  width: 100% !important;
+  background: transparent !important;
+}
+
+/* Thanh điều hướng (Tháng/Năm) */
+.custom-calendar .react-calendar__navigation {
+  margin-bottom: 1rem;
+}
+.custom-calendar .react-calendar__navigation button {
+  min-width: 30px;
+  background: none;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1f2937; 
+}
+.custom-calendar .react-calendar__navigation button:enabled:hover,
+.custom-calendar .react-calendar__navigation button:enabled:focus {
+  background-color: #f3f4f6;
+  border-radius: 8px;
+}
+
+/* Các thứ trong tuần (Su, Mo, Tu...) */
+.custom-calendar .react-calendar__month-view__weekdays {
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: capitalize;
+}
+/* Xóa cái gạch chân chấm chấm mặc định của thẻ abbr */
+.custom-calendar .react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none !important;
+}
+
+/* Bỏ màu đỏ mặc định của ngày cuối tuần */
+.custom-calendar .react-calendar__month-view__days__day--weekend {
+  color: inherit; 
+}
+
+/* Các ô ngày bình thường */
+.custom-calendar .react-calendar__tile {
+  padding: 0.6rem 0;
+  background: none;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151; 
+  border-radius: 50%; /* Bo tròn xoe */
+  transition: all 0.2s;
+  position: relative;
+}
+.custom-calendar .react-calendar__tile:enabled:hover,
+.custom-calendar .react-calendar__tile:enabled:focus {
+  background-color: #f3f4f6;
+}
+
+/* Ngày hiện tại (Today) - Xóa màu nền xanh nhạt, chỉ in đậm */
+.custom-calendar .react-calendar__tile--now {
+  background: transparent !important;
+  color: #1f2937 !important;
+  font-weight: bold;
+}
+
+/* Ngày được chọn đang click (Active) */
+.custom-calendar .react-calendar__tile--active {
+  background-color: #3b82f6 !important; 
+  color: white !important;
+  font-weight: bold;
+}
+
+/* Dấu chấm đỏ nhỏ xíu dưới ngày hiện tại */
+.dot-indicator {
+  height: 4px;
+  width: 4px;
+  background-color: #ef4444; 
+  border-radius: 50%;
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
