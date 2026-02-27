@@ -143,7 +143,11 @@ const Inbox = () => {
           <div className="flex items-center justify-between mb-8">
             <button onClick={() => setIsModalOpen(true)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors shadow-sm"><Plus size={20} /> Add New Task</button>
             {selectedDate && (
-              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-100 dark:border-blue-800 transition-colors"><CalendarDays size={16} /> <span className="text-sm font-medium">Date: {selectedDate.toLocaleDateString('en-GB')}</span></div>
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg border border-blue-100 dark:border-blue-800 transition-colors">
+                <CalendarDays size={16} /> 
+                {/* FIX TẠI ĐÂY: Bọc selectedDate vào new Date() */}
+                <span className="text-sm font-medium">Date: {new Date(selectedDate).toLocaleDateString('en-GB')}</span>
+              </div>
             )}
           </div>
           {filteredTasks.length === 0 && (<div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 transition-colors"><p>No tasks found.</p></div>)}
