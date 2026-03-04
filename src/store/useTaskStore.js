@@ -1,44 +1,28 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-const todayStr = new Date().toISOString().split('T')[0];
-
 export const useTaskStore = create(
   persist(
     (set) => ({
-      tasks: [
-        { id: 1, title: 'Fix database connection timeout error', subtitle: 'Users are reporting intermittent 504 errors on login.', priority: 'High', location: 'Server Room', status: 'overdue', startDate: '2026-02-20', endDate: '2026-02-24' },
-        { id: 2, title: 'Draft quarterly marketing report', subtitle: '', priority: 'Medium', location: 'Meeting Room A', status: 'today', startDate: todayStr, endDate: todayStr },
-        { id: 3, title: 'Update team roster', subtitle: '', priority: 'Low', location: 'HR Office', status: 'today', startDate: todayStr, endDate: '2026-02-28' },
-        { id: 4, title: 'Review Q4 Budget Proposals', subtitle: '', priority: '', location: 'Online', status: 'next', startDate: '2026-03-01', endDate: '2026-03-05' },
-        { id: 5, title: 'Client Presentation: Alpha Corp', subtitle: '', priority: 'High', location: 'Client HQ', status: 'next', startDate: '2026-03-02', endDate: '2026-03-10' },
+      columns: [
+        { id: 'col-1', title: 'tên công việc', color: 'yellow' },
       ],
-      stats: { completed: 12, pending: 4, percentage: 75 },
+      tasks: [],
       
       filterType: 'All', 
       selectedDate: null,
       isDarkMode: false,
-      
-      // HÀM MỚI: Quản lý Menu bên trái
       activeSidebarMenu: 'Inbox',
+      
+      showCompletedTasks: true,
+      toggleShowCompletedTasks: () => set((state) => ({ showCompletedTasks: !state.showCompletedTasks })),
+
+      // STATE MỚI: Ẩn/Hiện Bảng đã hoàn thành
+      showCompletedColumns: true,
+      toggleShowCompletedColumns: () => set((state) => ({ showCompletedColumns: !state.showCompletedColumns })),
+
       setActiveSidebarMenu: (menu) => set({ activeSidebarMenu: menu }),
-
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
-
-      toggleTask: (id) => set((state) => ({
-        tasks: state.tasks.map(task => 
-          task.id === id ? { ...task, status: task.status === 'completed' ? 'today' : 'completed' } : task
-        )
-      })),
-
-      addTask: (newTask) => set((state) => ({
-        tasks: [{ id: Date.now(), status: 'today', ...newTask }, ...state.tasks]
-      })),
-
-      deleteTask: (id) => set((state) => ({
-        tasks: state.tasks.filter(task => task.id !== id)
-      })),
-
       setFilterType: (type) => set({ filterType: type }),
 
       toggleSelectedDate: (date) => set((state) => {
@@ -47,6 +31,42 @@ export const useTaskStore = create(
         }
         return { selectedDate: date };
       }),
+
+      addColumn: (newColumn) => set((state) => ({
+        columns: [...state.columns, { id: `col-${Date.now()}`, ...newColumn }]
+      })),
+
+      deleteColumn: (id) => set((state) => ({
+        columns: state.columns.filter(col => col.id !== id),
+        tasks: state.tasks.filter(task => task.columnId !== id) 
+      })),
+
+      // HÀM MỚI: Đổi vị trí cột (Kéo thả)
+      reorderColumns: (dragId, dropId) => set((state) => {
+        const dragIndex = state.columns.findIndex(c => c.id === dragId);
+        const dropIndex = state.columns.findIndex(c => c.id === dropId);
+        if (dragIndex === -1 || dropIndex === -1 || dragIndex === dropIndex) return state;
+        
+        const newColumns = [...state.columns];
+        const [draggedItem] = newColumns.splice(dragIndex, 1);
+        newColumns.splice(dropIndex, 0, draggedItem);
+        
+        return { columns: newColumns };
+      }),
+
+      addTask: (newTask) => set((state) => ({
+        tasks: [{ id: Date.now(), status: 'pending', ...newTask }, ...state.tasks]
+      })),
+
+      toggleTask: (id) => set((state) => ({
+        tasks: state.tasks.map(task => 
+          task.id === id ? { ...task, status: task.status === 'completed' ? 'pending' : 'completed' } : task
+        )
+      })),
+
+      deleteTask: (id) => set((state) => ({
+        tasks: state.tasks.filter(task => task.id !== id)
+      })),
     }),
     {
       name: 'taskmaster-storage',

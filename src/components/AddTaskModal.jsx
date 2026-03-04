@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTaskStore } from '../store/useTaskStore';
 
-const AddTaskModal = ({ isOpen, onClose }) => {
+// Thêm prop targetColumnId để biết đang bấm Thêm Task ở cột nào
+const AddTaskModal = ({ isOpen, onClose, targetColumnId }) => {
   const addTask = useTaskStore((state) => state.addTask);
+  const setFilterType = useTaskStore((state) => state.setFilterType);
   
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -30,8 +32,11 @@ const AddTaskModal = ({ isOpen, onClose }) => {
       priority,
       location: location || 'Anywhere',
       startDate,
-      endDate
+      endDate,
+      columnId: targetColumnId // Gán khóa ngoại vào task
     });
+
+    setFilterType('All');
 
     setTitle(''); setSubtitle(''); setPriority('Medium'); setLocation(''); 
     setStartDate(todayStr); setEndDate(todayStr);
