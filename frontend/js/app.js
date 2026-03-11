@@ -54,16 +54,23 @@ function initNavigation() {
         });
     });
     
-    // Xử lý nút Đăng xuất (Log Out)
+// Xử lý nút Đăng xuất (Log Out)
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.preventDefault();
             if(confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+                
+                // 1. DÒNG LỆNH CỐT LÕI: Ném chìa khóa vào thùng rác!
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_email');
+                
+                // 2. Xong xuôi mới đá văng ra ngoài
                 window.location.href = 'login.html';
             }
         });
-    }
+    };
 }
 
 /**

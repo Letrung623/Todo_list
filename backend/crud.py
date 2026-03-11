@@ -1,5 +1,11 @@
 from sqlalchemy.orm import Session
 import models, schemas
+from passlib.context import CryptContext
+import jwt
+from datetime import datetime, timedelta, timezone
+
+# Công cụ băm nát mật khẩu bằng thuật toán bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # 1. Hàm LẤY danh sách Board của một User cụ thể (READ)
 def get_boards_by_user(db: Session, user_id: int):
@@ -91,11 +97,68 @@ def update_board(db: Session, board_id: int, board_update: schemas.BoardUpdate):
         db.refresh(db_board)
     return db_board
 
-# API Cấp cứu: Reset lại thứ tự các bảng cho chuẩn
-@app.get("/api/fix-order/{user_id}")
-def fix_board_order(user_id: int, db: Session = Depends(get_db)):
-    boards = db.query(models.KanbanBoard).filter(models.KanbanBoard.UserID == user_id).all()
-    for index, board in enumerate(boards):
-        board.OrderIndex = index + 1 # Ép nó thành 1, 2, 3, 4...
+# ==========================================
+# KHU VỰC CỦA USER (AUTH)
+# ==========================================
+
+# 1. Tìm user bằng Email (Dùng để check xem email đã bị đăng ký chưa)
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.Email == email).first()
+
+# 2. Tạo User mới (Băm mật khẩu trước khi lưu)
+def create_user(db: Session, user: schemas.UserCreate):
+    # Băm mật khẩu ra thành chuỗi mã hóa
+    hashed_password = pwd_context.hash(user.Password)
+    
+    # Tạo object User để nhét vào DB (Lưu ý: Không lưu user.Password mà lưu hashed_password)
+    db_user = models.User(
+        FullName=user.FullName, 
+        Email=user.Email, 
+        PasswordHash=hashed_password
+    )
+    db.add(db_user)
     db.commit()
-    return {"message": "Đã reset thứ tự Bảng thành công!"}
+    db.refresh(db_user)
+    return db_user
+
+# ==========================================
+# CẤU HÌNH BẢO MẬT JWT
+# ==========================================
+# Đây là chữ ký mật của riêng hệ thống em. Tuyệt đối không để lộ!
+SECRET_KEY = "BiMatCuaHiep66KHMT" 
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # Vòng tay VIP có hạn sử dụng 1 ngày (24 tiếng)
+
+# 3. Hàm soi mật khẩu (So sánh Pass người dùng nhập với Pass giun dế trong SQL)
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+# 4. Hàm Xác thực Đăng nhập
+def authenticate_user(db: Session, email: str, password: str):
+    user = get_user_by_email(db, email)
+    if not user:
+        return False # Không tìm thấy Email
+    if not verify_password(password, user.PasswordHash):
+        return False # Sai mật khẩu
+    return user # Đúng hết thì trả về ông User đó
+
+# 5. Máy in "Vòng tay VIP" (Tạo JWT Token)
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    # Hẹn giờ hủy token
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    # Ký tên đóng dấu bằng SECRET_KEY
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def delete_board(db: Session, board_id: int):
+    board = db.query(models.KanbanBoard).filter(models.KanbanBoard.BoardID == board_id).first()
+    if board:
+        # THAY CHỮ Task THÀNH KanbanTask (hoặc tên đúng của em) Ở 2 CHỖ DƯỚI ĐÂY:
+        db.query(models.KanbanTask).filter(models.KanbanTask.BoardID == board_id).delete(synchronize_session=False)
+        
+        db.delete(board)
+        db.commit()
+        return True
+    return False

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
+from pydantic import BaseModel, EmailStr
 
 # ==========================================
 # SCHEMAS CHO KANBAN BOARD
@@ -60,3 +61,19 @@ class TaskMove(BaseModel):
 # Dùng cho API sửa Bảng
 class BoardUpdate(BoardBase):
     pass
+
+# ==========================================
+# SCHEMAS CHO USER (ĐĂNG KÝ / ĐĂNG NHẬP)
+# ==========================================
+class UserCreate(BaseModel):
+    FullName: str
+    Email: EmailStr
+    Password: str
+
+class UserResponse(BaseModel):
+    UserID: int
+    FullName: str
+    Email: EmailStr
+    
+    class Config:
+        from_attributes = True

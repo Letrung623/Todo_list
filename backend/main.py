@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import models, schemas, crud
 from database import engine, get_db
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.security import OAuth2PasswordRequestForm
 # (Giữ nguyên mấy dòng khởi tạo app ở bài trước...)
 models.Base.metadata.create_all(bind=engine)
 
@@ -14,9 +14,10 @@ app = FastAPI(title="TaskMaster API", version="1.0.0")
 # ==========================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Cho phép mọi trang web (Frontend) gọi API này
+    # SỬA LẠI DÒNG DƯỚI ĐÂY: Chỉ định rõ cổng 5500 của em (Nhớ check lại url trên trình duyệt xem đúng 127.0.0.1 không nhé)
+    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"], 
     allow_credentials=True,
-    allow_methods=["*"], # Cho phép mọi lệnh GET, POST, PUT, DELETE
+    allow_methods=["*"], 
     allow_headers=["*"],
 )
 
@@ -95,3 +96,52 @@ def move_task(task_id: int, move_data: schemas.TaskMove, db: Session = Depends(g
 @app.put("/api/boards/{board_id}", response_model=schemas.BoardResponse)
 def update_board(board_id: int, board: schemas.BoardUpdate, db: Session = Depends(get_db)):
     return crud.update_board(db, board_id=board_id, board_update=board)
+
+# API Cấp cứu: Reset lại thứ tự các bảng cho chuẩn (Dùng xong có thể comment lại)
+@app.get("/api/fix-order/{user_id}")
+def fix_board_order(user_id: int, db: Session = Depends(get_db)):
+    # Import tạm models ở đây để tránh lỗi nếu trên đầu chưa có
+    import models 
+    boards = db.query(models.KanbanBoard).filter(models.KanbanBoard.UserID == user_id).all()
+    for index, board in enumerate(boards):
+        board.OrderIndex = index + 1 # Ép nó thành 1, 2, 3, 4...
+    db.commit()
+    return {"message": "Đã reset thứ tự Bảng thành công!"}
+
+# ==========================================
+# API ĐĂNG KÝ / ĐĂNG NHẬP
+# ==========================================
+
+@app.post("/api/register", response_model=schemas.UserResponse)
+def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # 1. Kiểm tra xem Email đã có ai xài chưa
+    db_user = crud.get_user_by_email(db, email=user.Email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email này đã được đăng ký! Vui lòng dùng email khác.")
+    
+    # 2. Nếu chưa ai xài thì cho phép tạo mới
+    return crud.create_user(db=db, user=user)
+
+@app.post("/api/login")
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Email hoặc Mật khẩu không chính xác!")
+    
+    access_token = crud.create_access_token(data={"sub": str(user.UserID)})
+    
+    # SỬA LẠI DÒNG RETURN NÀY: Kẹp thêm Tên và Email để gửi về Frontend
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "FullName": user.FullName,
+        "Email": user.Email
+    }
+# Xóa Board
+@app.delete("/api/boards/{board_id}")
+def delete_board(board_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_board(db, board_id=board_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy Bảng để xóa")
+    return {"message": "Đã xóa Bảng và các công việc bên trong!"}

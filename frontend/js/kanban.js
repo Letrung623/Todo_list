@@ -1,3 +1,9 @@
+// LÍNH GÁC CỬA: Không có token thì cút về trang Login
+if (!localStorage.getItem('access_token')) {
+    window.location.href = 'login.html';
+}
+
+
 /* ==========================================================================
    FILE: js/kanban.js
    CÔNG DỤNG: Xử lý logic Kanban (Đã nối thẳng ống nước vào SQL Server)
@@ -25,7 +31,18 @@ export function initKanban() {
     setupFilters();
     setupForms();
     setupSettingsToggle();
-    loadDataAndRenderKanban(); // Gọi API kéo dữ liệu ngay khi mở web
+    
+    // THÊM ĐOẠN NÀY VÀO: Lôi thông tin ra ốp lên giao diện
+    const savedName = localStorage.getItem('user_name');
+    const savedEmail = localStorage.getItem('user_email');
+    if (savedName && savedEmail) {
+        document.getElementById('display-name').innerText = savedName;
+        document.getElementById('display-email').innerText = savedEmail;
+        // Lấy chữ cái đầu tiên của tên làm Avatar và in hoa lên
+        document.getElementById('display-avatar').innerText = savedName.charAt(0).toUpperCase();
+    }
+
+    loadDataAndRenderKanban(); 
 }
 
 // ==========================================
@@ -34,7 +51,7 @@ export function initKanban() {
 export async function loadDataAndRenderKanban() {
     try {
         // Lấy Bảng của User 1 (Tài khoản nháp)
-        currentBoards = await API.getBoards(1);
+        currentBoards = await API.getBoards();
         if (!currentBoards) currentBoards = [];
 
         // Lấy Công việc của từng Bảng
@@ -219,9 +236,13 @@ function attachBoardEvents() {
         });
     });
 
-    // NÚT XÓA BẢNG: Báo lỗi do Backend chưa có API
-    kanbanView.querySelectorAll('.btn-delete-board').forEach(btn => btn.addEventListener('click', (e) => {
-        alert('Chức năng Xóa Bảng đang chờ thầy trò mình xây API Backend ở bài sau nhé!');
+    // NÚT XÓA BẢNG: Đã nối API cực xịn
+    kanbanView.querySelectorAll('.btn-delete-board').forEach(btn => btn.addEventListener('click', async (e) => {
+        if(confirm("CẢNH BÁO: Bạn có chắc muốn xóa Bảng này và TOÀN BỘ công việc bên trong không?")) {
+            const boardId = e.currentTarget.dataset.id;
+            await API.deleteBoard(boardId);
+            await loadDataAndRenderKanban(); // Xóa xong tự động làm tươi màn hình
+        }
     }));
 
     // NÚT XÓA TASK: Đã nối API DELETE
@@ -277,18 +298,17 @@ function attachBoardEvents() {
 
 
 function setupForms() {
-    // ========================================================
-    // 0. BẮT SỰ KIỆN MỞ MODAL CHO NÚT "THÊM CỘT MỚI" (DÒNG MỚI THÊM)
-    // ========================================================
-    // Tìm cái nút có class .btn-primary (nút Thêm Cột Mới ở góc trên)
+    // 0. BẮT SỰ KIỆN MỞ MODAL CHO NÚT "THÊM CỘT MỚI"
     const btnOpenAddBoard = document.querySelector('.btn-primary'); 
     if (btnOpenAddBoard) {
         btnOpenAddBoard.addEventListener('click', () => {
-            document.getElementById('form-add-board').reset(); // Xóa trắng form cũ
-            document.getElementById('edit-board-id').value = ''; // Báo hiệu là Tạo mới
-            openModal(document.getElementById('modal-add-board')); // Hiện Modal lên
+            const formBoard = document.getElementById('form-add-board');
+            if(formBoard) formBoard.reset(); 
+            document.getElementById('edit-board-id').value = ''; 
+            openModal(document.getElementById('modal-add-board')); 
         });
     }
+
     // FORM ĐỔI MÀU GIAO DIỆN
     const colorOptions = document.querySelectorAll('.color-option');
     colorOptions.forEach(option => {
@@ -298,74 +318,92 @@ function setupForms() {
         });
     });
 
-    // FORM THÊM BẢNG DỰ ÁN MỚI
-    document.getElementById('form-add-board')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const editId = document.getElementById('edit-board-id').value;
-        const title = document.getElementById('board-title').value;
-        const color = `pastel-${document.querySelector('.color-option.selected')?.dataset.color || 'blue'}`;
+    // ========================================================
+    // 1. FORM THÊM / SỬA BẢNG DỰ ÁN
+    // ========================================================
+    const formAddBoard = document.getElementById('form-add-board');
+    if(formAddBoard) {
+        formAddBoard.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('edit-board-id').value;
+            const title = document.getElementById('board-title').value;
+            
+            const colorElement = document.querySelector('.color-option.selected');
+            const color = colorElement ? `pastel-${colorElement.dataset.color}` : 'pastel-blue'; // Mặc định nếu quên chọn
 
-        if(editId) {
-            await API.updateBoard(editId, { Title: title, Color: color, OrderIndex: 0 });
-            await loadDataAndRenderKanban();
-        } else {
-            // TẠO BẢNG MỚI BẰNG API
             try {
-                await fetch('http://127.0.0.1:8000/api/boards/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ UserID: 1, Title: title, Color: color, OrderIndex: currentBoards.length + 1 })
-                });
+                if(editId) {
+                    // Sửa bảng
+                    await API.updateBoard(editId, { Title: title, Color: color, OrderIndex: 0 });
+                } else {
+                    // TẠO BẢNG MỚI (Dùng API.js để tự động gửi Vòng tay VIP và gán đúng chủ nhân)
+                    await API.createBoard({ 
+                        Title: title, 
+                        Color: color, 
+                        OrderIndex: currentBoards.length + 1 
+                    });
+                }
+                
                 await loadDataAndRenderKanban(); // Làm tươi màn hình
-            } catch (err) { console.error("Lỗi tạo bảng:", err); }
-        }
-        closeModal(document.getElementById('modal-add-board'));
-        e.target.reset(); document.getElementById('edit-board-id').value = '';
-    });
+                closeModal(document.getElementById('modal-add-board'));
+                e.target.reset(); 
+                document.getElementById('edit-board-id').value = '';
+            } catch (err) { 
+                console.error("Lỗi xử lý bảng:", err); 
+            }
+        });
+    }
 
-    // FORM THÊM TASK MỚI (Dùng api.js)
-    document.getElementById('form-add-task')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const editId = document.getElementById('edit-task-id').value;
-        
-        const title = document.getElementById('task-title').value;
-        const desc = document.getElementById('task-desc').value;
-        const priority = document.getElementById('task-priority').value;
-        const startDate = document.getElementById('task-start-date').value;
-        const endDate = document.getElementById('task-end-date').value;
-        
-        if(editId) {
-            // SỬA TASK (GỌI API PUT)
-            const updateTaskData = {
-                Title: title,
-                Description: desc ? desc : null,
-                PriorityLevel: priority,
-                StartDate: startDate ? startDate : null,
-                EndDate: endDate ? endDate : null,
-                Status: 'pending' // Tạm thời cứ giữ pending, bài sau mình làm checkbox đổi status
-            };
+    // ========================================================
+    // 2. FORM THÊM / SỬA TASK (CÔNG VIỆC)
+    // ========================================================
+    const formAddTask = document.getElementById('form-add-task');
+    if(formAddTask) {
+        formAddTask.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('edit-task-id').value;
             
-            await API.updateTask(editId, updateTaskData);
-            await loadDataAndRenderKanban(); // Cập nhật xong thì vẽ lại màn hình
-        } else {
-            // TẠO TASK MỚI BẰNG API
-            const newTaskData = {
-                BoardID: parseInt(document.getElementById('task-board-id').value),
-                Title: title,
-                Description: desc ? desc : null,
-                PriorityLevel: priority,
-                StartDate: startDate ? startDate : null,
-                EndDate: endDate ? endDate : null,
-                Status: 'pending'
-            };
+            const title = document.getElementById('task-title').value;
+            const desc = document.getElementById('task-desc').value;
+            const priority = document.getElementById('task-priority').value;
+            const startDate = document.getElementById('task-start-date').value;
+            const endDate = document.getElementById('task-end-date').value;
             
-            await API.createTask(newTaskData);
-            await loadDataAndRenderKanban(); // Kéo DB về vẽ lại màn hình
-        }
-        
-        closeModal(document.getElementById('modal-add-task'));
-        e.target.reset(); document.getElementById('edit-task-id').value = '';
-    });
+            try {
+                if(editId) {
+                    // SỬA TASK
+                    // Lưu ý: Thầy bỏ dòng Status: 'pending' đi, để nó không làm reset trạng thái Task đang bị gạch ngang của em
+                    const updateTaskData = {
+                        Title: title,
+                        Description: desc ? desc : null,
+                        PriorityLevel: priority,
+                        StartDate: startDate ? startDate : null,
+                        EndDate: endDate ? endDate : null
+                    };
+                    await API.updateTask(editId, updateTaskData);
+                } else {
+                    // TẠO TASK MỚI
+                    const newTaskData = {
+                        BoardID: parseInt(document.getElementById('task-board-id').value),
+                        Title: title,
+                        Description: desc ? desc : null,
+                        PriorityLevel: priority,
+                        StartDate: startDate ? startDate : null,
+                        EndDate: endDate ? endDate : null,
+                        Status: 'pending' // Chỉ Task mới thì mới set pending
+                    };
+                    await API.createTask(newTaskData);
+                }
+                
+                await loadDataAndRenderKanban(); // Kéo DB về vẽ lại màn hình
+                closeModal(document.getElementById('modal-add-task'));
+                e.target.reset(); 
+                document.getElementById('edit-task-id').value = '';
+            } catch (error) {
+                console.error("Lỗi xử lý Task:", error);
+            }
+        });
+    }
 }
 
 // ==========================================

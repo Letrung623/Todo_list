@@ -2,38 +2,63 @@
    FILE: js/widgets.js
    CÔNG DỤNG: Xử lý Vòng tròn Tiến độ và Logic sinh lịch Mini Calendar
    ========================================================================== */
-import { db } from './mockData.js';
-import { setDateFilter } from './kanban.js'; // Gọi hàm lọc bên kanban.js
 
-let currentDate = new Date(); // Biến lưu tháng/năm đang xem
-let selectedDate = null;      // Biến lưu ngày người dùng click vào
+import { currentTasks, setDateFilter } from './kanban.js'; 
+
+let currentDate = new Date(); 
+let selectedDate = null;      
 
 export function initWidgets() {
-    updateWidgets();    // Vẽ vòng tròn %
-    renderCalendar();   // Vẽ lịch
-    setupCalendarEvents(); // Bắt sự kiện click
+    updateWidgets();    
+    renderCalendar();   
+    setupCalendarEvents(); 
     setupFocusTimer();
 }
 
 /**
- * 1. VÒNG TRÒN TIẾN ĐỘ THỐNG KÊ (Giữ nguyên như cũ)
+ * 1. VÒNG TRÒN TIẾN ĐỘ THỐNG KÊ (Đã nối với SQL Server)
  */
 export function updateWidgets() {
-    const total = db.tasks.length;
-    const completed = db.tasks.filter(t => t.status === 'completed').length;
+    // Nếu chưa load xong dữ liệu thì mảng rỗng, cho bằng 0 hết
+    if (!currentTasks) return; 
+
+    // Lấy tổng số task hiện có của user này
+    const total = currentTasks.length;
+    
+    // Đếm số task có Status là 'completed' (Chú ý chữ hoa S)
+    const completed = currentTasks.filter(t => t.Status === 'completed').length;
+    
+    // Việc còn lại = Tổng - Đã xong
     const pending = total - completed;
+    
+    // Tính phần trăm (Cẩn thận lỗi chia cho 0)
     const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
+    // Bắt các thẻ HTML
     const statDone = document.getElementById('stat-done');
     const statPending = document.getElementById('stat-pending');
     const progressPercent = document.getElementById('progress-percent');
     const circle = document.getElementById('svg-progress-bar');
 
+    // Ốp số liệu lên màn hình
     if(statDone) statDone.innerText = completed;
     if(statPending) statPending.innerText = pending;
     if(progressPercent) progressPercent.innerText = `${percent}%`;
 
-    if(circle) circle.style.strokeDashoffset = 283 - (283 * percent / 100);
+    // Ma thuật quay vòng tròn SVG (283 là chu vi hình tròn r=45)
+    if(circle) {
+        // Tốc độ mượt mà phụ thuộc vào CSS transition của thẻ circle này
+        circle.style.strokeDashoffset = 283 - (283 * percent / 100);
+        
+        // Đổi màu vòng tròn tùy theo tiến độ cho nó ngầu (Tùy chọn)
+        if (percent === 100) {
+            circle.style.stroke = '#10b981'; // Xanh lá hoàn thành
+        } else if (percent > 0) {
+            circle.style.stroke = '#3b82f6'; // Xanh dương đang làm
+        } else {
+            circle.style.stroke = '#e2e8f0'; // Xám xịt chưa làm gì
+        }
+    }
 }
 
 /**
