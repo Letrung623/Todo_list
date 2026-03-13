@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime, Time
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -14,6 +14,7 @@ class User(Base):
     FullName = Column(String(100), nullable=False)  # Tương đương NVARCHAR
     PasswordHash = Column(String(255), nullable=False)
     CreatedAt = Column(DateTime, default=datetime.utcnow)
+    timetables = relationship("Timetable", back_populates="owner")
 
     # Khai báo mối quan hệ để Python dễ truy xuất (Không tạo thêm cột)
     boards = relationship("KanbanBoard", back_populates="owner", cascade="all, delete-orphan")
@@ -67,10 +68,16 @@ class ProjectCard(Base):
 
     CardID = Column(Integer, primary_key=True, index=True)
     ColumnID = Column(Integer, ForeignKey("ProjectColumns.ColumnID", ondelete="CASCADE"), nullable=False)
-    Name = Column(String(255), nullable=False)
-    TotalTasks = Column(Integer, default=1)
-    DoneTasks = Column(Integer, default=0)
-    OverrideColor = Column(String(50), nullable=True)
+    
+    # Đã sửa Name -> Title và thêm các cột cần thiết cho việc Kéo Thả
+    Title = Column(String(255), nullable=False)
+    Description = Column(String(1000), nullable=True) 
+    OrderIndex = Column(Integer, default=0) 
+    
+    # Bộ 3 biến để phục vụ giao diện Ô vuông (Tiến độ) của sếp
+    TotalBoxes = Column(Integer, default=5)
+    DoneBoxes = Column(Integer, default=0)
+    ColorClass = Column(String(50), nullable=True) # Lưu màu riêng lẻ của từng Card
 
     column = relationship("ProjectColumn", back_populates="cards")
 
@@ -84,3 +91,19 @@ class FocusSession(Base):
     TotalSeconds = Column(Integer, default=0)
 
     owner = relationship("User", back_populates="focus_sessions")
+
+# models.py
+class Timetable(Base):
+    __tablename__ = "Timetables"
+
+    SubjectID = Column(Integer, primary_key=True, index=True)
+    UserID = Column(Integer, ForeignKey("Users.UserID"), nullable=False)
+    
+    SubjectName = Column(String(255), nullable=False)
+    DayOfWeek = Column(Integer, nullable=False) # 2=Thứ 2, 3=Thứ 3... 8=Chủ Nhật
+    StartTime = Column(Time, nullable=False) # Giờ bắt đầu (VD: 07:00)
+    EndTime = Column(Time, nullable=False)   # Giờ kết thúc (VD: 11:30)
+    Room = Column(String(50))                # Phòng học (VD: G2-301)
+    
+    # Quan hệ ngược lại với User (nếu cần)
+    owner = relationship("User", back_populates="timetables")

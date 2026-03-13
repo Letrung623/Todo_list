@@ -185,4 +185,169 @@ export const API = {
             return await response.json();
         } catch (error) { console.error("Lỗi xóa bảng:", error); }
     },
+    // ... (các hàm cũ) ...
+
+    // 10. Gửi ảnh Thời khóa biểu cho AI đọc
+    extractTimetable: async (imageFile) => {
+        try {
+            // Phải dùng FormData để gói file ảnh
+            const formData = new FormData();
+            formData.append('file', imageFile);
+
+            const token = localStorage.getItem('access_token');
+            const response = await fetch(`${API_BASE_URL}/timetable/extract`, {
+                method: 'POST',
+                headers: {
+                    // CỰC KỲ QUAN TRỌNG: Gửi file thì TUYỆT ĐỐI KHÔNG ghi 'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: formData
+            });
+            
+            return await response.json();
+        } catch (error) { 
+            console.error("Lỗi gửi ảnh cho AI:", error); 
+            return { success: false, error: "Lỗi kết nối máy chủ" };
+        }
+    },
+
+    // Hàm 11. Gửi mảng Thời khóa biểu xuống Database lưu trữ
+    saveTimetable: async (subjectsArray) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return { success: false, error: "Chưa đăng nhập" };
+
+            const response = await fetch(`${API_BASE_URL}/timetable/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ subjects: subjectsArray }) // Xóa sync_to_kanban ở đây
+            });
+            return await response.json();
+        } catch (error) { 
+            return { success: false, error: "Lỗi kết nối máy chủ" };
+        }
+    },
+    getTimetable: async () => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return { success: false, data: [] }; // Chưa có vòng tay VIP thì thôi
+
+            const response = await fetch(`${API_BASE_URL}/timetable/get`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return await response.json();
+        } catch (error) { 
+            console.error("Lỗi lấy thời khóa biểu:", error);
+            return { success: false, data: [] };
+        }
+    },
+    // ==========================================
+    // MODULE: QUẢN LÝ DỰ ÁN (PROJECT COLUMNS & CARDS)
+    // ==========================================
+    
+    // 1. Lấy danh sách Cột
+    getProjectColumns: async () => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return null;
+            const res = await fetch(`${API_BASE_URL}/projects/columns`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return res.ok ? await res.json() : null;
+        } catch (e) { console.error(e); return null; }
+    },
+
+    // 2. Tạo Cột mới
+    createProjectColumn: async (columnData) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/columns`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(columnData)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (e) { console.error(e); return null; }
+    },
+
+    // 3. Lấy danh sách Thẻ (Cards) trong 1 Cột
+    getProjectCards: async (columnId) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/columns/${columnId}/cards`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return res.ok ? await res.json() : [];
+        } catch (e) { console.error(e); return []; }
+    },
+
+    // 4. Tạo Thẻ (Card) mới
+    createProjectCard: async (cardData) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/cards`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(cardData)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (e) { console.error(e); return null; }
+    },
+
+    // 5. Cập nhật Thẻ (Dùng khi sửa nội dung HOẶC khi Kéo Thả sang cột khác)
+    updateProjectCard: async (cardId, updateData) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/cards/${cardId}`, {
+                method: 'PATCH', // Dùng PATCH cho cập nhật một phần
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(updateData)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (e) { console.error(e); return null; }
+    },
+
+    // 6. Xóa Thẻ
+    deleteProjectCard: async (cardId) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/cards/${cardId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return res.ok;
+        } catch (e) { console.error(e); return false; }
+    },
+    // Cập nhật cột
+    updateProjectColumn: async (columnId, colData) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/columns/${columnId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(colData)
+            });
+            return res.ok;
+        } catch (e) { console.error(e); return false; }
+    },
+
+    // Xóa cột
+    deleteProjectColumn: async (columnId) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/projects/columns/${columnId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return res.ok;
+        } catch (e) { console.error(e); return false; }
+    },
 };
+

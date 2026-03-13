@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-import models, schemas
+from backend import models, schemas
 from passlib.context import CryptContext
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -125,7 +125,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 # CẤU HÌNH BẢO MẬT JWT
 # ==========================================
 # Đây là chữ ký mật của riêng hệ thống em. Tuyệt đối không để lộ!
-SECRET_KEY = "BiMatCuaHiep66KHMT" 
+SECRET_KEY = "Trung#2006" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # Vòng tay VIP có hạn sử dụng 1 ngày (24 tiếng)
 
@@ -159,6 +159,65 @@ def delete_board(db: Session, board_id: int):
         db.query(models.KanbanTask).filter(models.KanbanTask.BoardID == board_id).delete(synchronize_session=False)
         
         db.delete(board)
+        db.commit()
+        return True
+    return False
+# 6.Lưu thời khóa biểu 
+def save_timetables(db: Session, user_id: int, subjects_data: list[schemas.TimetableItem]):
+    db.query(models.Timetable).filter(models.Timetable.UserID == user_id).delete()
+    new_subjects = []
+    for item in subjects_data:
+        db_subject = models.Timetable(
+            UserID=user_id, SubjectName=item.SubjectName, DayOfWeek=item.DayOfWeek,
+            StartTime=item.StartTime, EndTime=item.EndTime, Room=item.Room
+        )
+        new_subjects.append(db_subject)
+        db.add(db_subject)
+    db.commit()
+    return {"message": f"Đã lưu thành công {len(new_subjects)} môn học!"}
+
+# ==========================================
+# CRUD CHO PROJECT COLUMNS
+# ==========================================
+def get_project_columns(db: Session, user_id: int):
+    # Lấy các cột của User, xếp theo thứ tự OrderIndex
+    return db.query(models.ProjectColumn).filter(models.ProjectColumn.UserID == user_id).order_by(models.ProjectColumn.OrderIndex).all()
+
+def create_project_column(db: Session, column: schemas.ProjectColumnCreate, user_id: int):
+    db_column = models.ProjectColumn(**column.model_dump(), UserID=user_id)
+    db.add(db_column)
+    db.commit()
+    db.refresh(db_column)
+    return db_column
+
+# ==========================================
+# CRUD CHO PROJECT CARDS
+# ==========================================
+def get_project_cards(db: Session, column_id: int):
+    return db.query(models.ProjectCard).filter(models.ProjectCard.ColumnID == column_id).order_by(models.ProjectCard.OrderIndex).all()
+
+def create_project_card(db: Session, card: schemas.ProjectCardCreate):
+    db_card = models.ProjectCard(**card.model_dump())
+    db.add(db_card)
+    db.commit()
+    db.refresh(db_card)
+    return db_card
+
+def update_project_card(db: Session, card_id: int, card_data: schemas.ProjectCardUpdate):
+    db_card = db.query(models.ProjectCard).filter(models.ProjectCard.CardID == card_id).first()
+    if db_card:
+        # Cập nhật thông minh: Chỉ ghi đè những trường nào có gửi Data lên
+        update_data = card_data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_card, key, value)
+        db.commit()
+        db.refresh(db_card)
+    return db_card
+
+def delete_project_card(db: Session, card_id: int):
+    db_card = db.query(models.ProjectCard).filter(models.ProjectCard.CardID == card_id).first()
+    if db_card:
+        db.delete(db_card)
         db.commit()
         return True
     return False

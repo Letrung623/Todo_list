@@ -1,7 +1,6 @@
-from pydantic import BaseModel
-from typing import List, Optional
-from datetime import date
 from pydantic import BaseModel, EmailStr
+from typing import List, Optional
+from datetime import date, time
 
 # ==========================================
 # SCHEMAS CHO KANBAN BOARD
@@ -75,5 +74,98 @@ class UserResponse(BaseModel):
     FullName: str
     Email: EmailStr
     
+    class Config:
+        from_attributes = True
+
+# ==========================================
+# SCHEMAS CHO THỜI KHÓA BIỂU
+# ==========================================
+
+class TimetableItem(BaseModel):
+    SubjectName: str
+    DayOfWeek: int
+    StartTime: time
+    EndTime: time
+    Room: Optional[str] = "Chưa rõ"
+
+# Khuôn mẫu để nhận 1 mảng (list) các môn học từ Step 2 gửi lên
+class TimetableSaveRequest(BaseModel):
+    subjects: List[TimetableItem]
+
+# ==========================================
+# SCHEMAS CHO CỘT DỰ ÁN (PROJECT COLUMNS)
+# ==========================================
+class ProjectColumnCreate(BaseModel):
+    Title: str
+    OrderIndex: int = 0
+
+class ProjectColumnResponse(ProjectColumnCreate):
+    ColumnID: int
+    UserID: int
+    
+    class Config:
+        from_attributes = True # Dùng cho Pydantic v2 (nếu lỗi thì sửa thành orm_mode = True)
+
+# ==========================================
+# SCHEMAS CHO THẺ CÔNG VIỆC (PROJECT CARDS)
+# ==========================================
+class ProjectCardCreate(BaseModel):
+    ColumnID: int
+    Title: str
+    Description: Optional[str] = None
+    DueDate: Optional[date] = None
+    OrderIndex: int = 0
+
+class ProjectCardUpdate(BaseModel):
+    # Tất cả đều là Optional để sếp có thể cập nhật từng phần (ví dụ chỉ kéo thả thì chỉ đổi ColumnID)
+    ColumnID: Optional[int] = None
+    Title: Optional[str] = None
+    Description: Optional[str] = None
+    DueDate: Optional[date] = None
+    OrderIndex: Optional[int] = None
+
+class ProjectCardResponse(ProjectCardCreate):
+    CardID: int
+    
+    class Config:
+        from_attributes = True
+
+# ==========================================
+# SCHEMAS CHO CỘT DỰ ÁN (PROJECT COLUMNS)
+# ==========================================
+class ProjectColumnCreate(BaseModel):
+    Title: str
+    ColorClass: str = "blue"  # Sếp có màu cho cột nên thêm dòng này
+    OrderIndex: int = 0
+
+class ProjectColumnResponse(ProjectColumnCreate):
+    ColumnID: int
+    UserID: int
+    class Config:
+        from_attributes = True
+
+# ==========================================
+# SCHEMAS CHO THẺ CÔNG VIỆC (PROJECT CARDS)
+# ==========================================
+class ProjectCardCreate(BaseModel):
+    ColumnID: int
+    Title: str
+    Description: Optional[str] = None
+    TotalBoxes: int = 5      # Tổng số ô tiến độ
+    DoneBoxes: int = 0       # Số ô đã xong
+    ColorClass: Optional[str] = None # Màu riêng của thẻ
+    OrderIndex: int = 0
+
+class ProjectCardUpdate(BaseModel):
+    ColumnID: Optional[int] = None
+    Title: Optional[str] = None
+    Description: Optional[str] = None
+    TotalBoxes: Optional[int] = None
+    DoneBoxes: Optional[int] = None
+    ColorClass: Optional[str] = None
+    OrderIndex: Optional[int] = None
+
+class ProjectCardResponse(ProjectCardCreate):
+    CardID: int
     class Config:
         from_attributes = True

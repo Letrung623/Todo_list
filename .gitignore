@@ -1,0 +1,10 @@
+# Bỏ qua két sắt chứa Key
+.env
+
+# Bỏ qua thư mục môi trường ảo và rác Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
