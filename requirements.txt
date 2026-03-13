@@ -1,8 +1,11 @@
 fastapi
 uvicorn
 sqlalchemy
-pyodbc
-pydantic
+pymssql
+passlib
+bcrypt
+PyJWT
+python-dotenv
 python-multipart
-python-jose[cryptography]
-passlib[bcrypt]
+groq
+pydantic
