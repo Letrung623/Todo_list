@@ -15,7 +15,8 @@ from backend.vision_service import extract_schedule_from_base64
 # Khởi tạo Database
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+# app = FastAPI() //may e khong chay dc nen cung tat luon
+
 # Khởi tạo App
 app = FastAPI(title="TaskMaster API", version="1.0.0")
 
@@ -24,7 +25,8 @@ app = FastAPI(title="TaskMaster API", version="1.0.0")
 # ==========================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"], 
+    # allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"], //may e chay khong dc cai nay
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"], 
     allow_headers=["*"],

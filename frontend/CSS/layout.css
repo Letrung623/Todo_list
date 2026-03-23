@@ -81,3 +81,71 @@
     overflow-y: auto;
     z-index: 10;
 }
+
+/* 🎨 THÊM: Styles cho collapsed states (Thu gọn sidebar & right-panel)
+   ================================================================
+   Khi .collapsed class được thêm vào, sidebar và right-panel sẽ biến mất
+   với animation mượt mà (transition 0.3s), và main-content tự động mở rộng
+   vì nó dùng flex: 1 */
+
+/* --- SIDEBAR COLLAPSED STATE --- */
+.sidebar.collapsed {
+    /* 🔧 FIX: Collapsed width = 0 để ẩn hoàn toàn
+       Toggle button được thay thế bằng ghost button ở cạnh trái màn hình */
+    width: 0;
+    overflow: hidden;
+    /* Animation: 0.3s smooth width transition */
+    transition: width 0.3s ease, padding 0.3s ease;
+    /* Giải phóng không gian, ẩn border */
+    padding: 0;
+    border-right: none;
+}
+
+/* Khi sidebar bị collapsed, tất cả các menu items ẩn đi */
+.sidebar.collapsed .sidebar-top,
+.sidebar.collapsed .sidebar-bottom {
+    display: none;
+    /* Thay vì opacity: 0, dùng display: none để giải phóng không gian */
+}
+
+/* --- RIGHT PANEL COLLAPSED STATE --- */
+.right-panel.collapsed {
+    /* 🔧 FIX: Collapsed width = 0 để ẩn hoàn toàn (không lòi chữ)
+       Toggle button được thay thế bằng ghost button ở cạnh phải màn hình */
+    width: 0;
+    overflow: hidden;
+    /* Animation: 0.3s smooth width transition */
+    transition: width 0.3s ease, padding 0.3s ease;
+    /* Giải phóng không gian, ẩn border */
+    padding: 0;
+    border-left: none;
+}
+
+/* Khi right-panel bị collapsed, tất cả các widgets + header ẩn đi */
+.right-panel.collapsed .widget {
+    display: none;
+    /* Thay vì opacity: 0, dùng display: none để giải phóng không gian */
+}
+
+/* 🔧 FIX: Ẩn header khi right-panel collapsed */
+.right-panel.collapsed .right-panel-header {
+    display: none;
+}
+
+/* Toggle button vẫn hiển thị ngay cả khi right-panel collapsed */
+.right-panel.collapsed .right-panel-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 12px 0;
+}
+
+/* --- MAIN CONTENT AUTO-EXPAND ---
+   Khi một hoặc cả hai sidebar collapsed, main-content tự động mở rộng
+   vì nó sử dụng flex: 1 (flexible growth) */
+.main-content {
+    transition: flex 0.3s ease;
+    /* Đảm bảo không bị tràn layout */
+    min-width: 0;
+}

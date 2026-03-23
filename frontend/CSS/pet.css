@@ -1,0 +1,407 @@
+/* ==========================================================================
+   FILE: pet.css
+   KẾT NỐI: index.html (#view-pet, Pet Dashboard)
+   MỤC ĐÍCH: Styling giao diện Pet Dashboard với split-view layout
+   ========================================================================== */
+
+/* ===== CONTAINER CHÍNH: SPLIT VIEW LAYOUT ===== */
+.pet-dashboard {
+    /* Bố cục flexbox: 30% trái, 70% phải */
+    display: flex;
+    height: 100%;
+    width: 100%;
+    gap: 0;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== PHẦN TRÁI: PET INFO (30%) ===== */
+.pet-sidebar {
+    /* 🔧 FIX: Cột trái: 30% chiều rộng, dark mode
+       - Fixed height (100%), không scroll
+       - Compact spacing & padding
+       - Space-between để phân bổ đều */
+    flex: 0 0 30%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
+    padding: 16px 16px; /* 🔧 Giảm từ 32px 24px */
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* 🔧 Giảm từ 24px */
+    align-items: center;
+    color: #fff;
+    overflow: hidden; /* 🔧 FIX: Không cho scroll, ẩn hết */
+    justify-content: space-between; /* 🔧 Phân bổ không gian đều */
+}
+
+/* --- GOLD COUNTER --- */
+.gold-counter {
+    /* 💰 Hiển thị vàng nổi bật, compact */
+    display: flex;
+    align-items: center;
+    gap: 6px; /* 🔧 Giảm từ 8px */
+    background: rgba(255, 193, 7, 0.15);
+    padding: 8px 12px; /* 🔧 Giảm từ 12px 20px */
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    width: 100%;
+    justify-content: center;
+    flex-shrink: 0; /* 🔧 Đảm bảo không bị shrink */
+}
+
+.gold-counter i {
+    /* Icon vàng */
+    color: #ffc107;
+    font-size: 14px; /* 🔧 Giảm từ 18px */
+}
+
+.gold-counter span {
+    /* Số vàng sáng */
+    color: #ffc107;
+    font-weight: 700;
+    font-size: 14px; /* 🔧 Giảm từ 20px */
+    letter-spacing: 0.5px; /* 🔧 Giảm từ 1px */
+}
+
+/* --- PET AVATAR SECTION --- */
+.pet-avatar-section {
+    /* Phần hiển thị avatar + tên, compact */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px; /* 🔧 Giảm từ 16px */
+    width: 100%;
+    flex: 1; /* 🔧 Nhận phần không gian còn lại */
+    justify-content: center;
+    min-height: 0; /* 🔧 Cho phép flex shrink */
+}
+
+.pet-avatar-placeholder {
+    /* 🔧 FIX: Khung ảnh placeholder - giảm 25% size
+       Từ 180x180 → 130x130 (compact) */
+    width: 130px;
+    height: 130px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px; /* 🔧 Giảm từ 64px */
+    color: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    flex-shrink: 0; /* 🔧 Đảm bảo size không bị áp dụng */
+}
+
+.pet-avatar-placeholder:hover {
+    /* Hover effect: brighten */
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.pet-name {
+    /* Tên thú cưng, compact */
+    font-size: 16px; /* 🔧 Giảm từ 24px */
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+/* --- EXPERIENCE BAR SECTION --- */
+.pet-exp-section {
+    /* 🔧 FIX: Phần kinh nghiệm, compact spacing */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* 🔧 Giảm từ 12px */
+    flex-shrink: 0;
+}
+
+.pet-level-info {
+    /* Info: Level X, compact */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2px; /* 🔧 Giảm từ 4px */
+}
+
+.pet-level-label {
+    /* Nhãn "Level" */
+    font-size: 10px; /* 🔧 Giảm từ 12px */
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px; /* 🔧 Giảm từ 1px */
+}
+
+.pet-level-value {
+    /* Số level */
+    font-size: 14px; /* 🔧 Giảm từ 20px */
+    font-weight: 700;
+    color: #fff;
+}
+
+.pet-exp-bar {
+    /* 🔧 FIX: Thanh kinh nghiệm, nhỏ gọn */
+    width: 100%;
+    height: 18px; /* 🔧 Giảm từ 22px */
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    position: relative;
+}
+
+.pet-exp-fill {
+    /* Thanh xanh lá cây (progress) */
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50 0%, #81c784 100%);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.6) inset;
+}
+
+.pet-exp-text {
+    /* Text dưới thanh: "80% to Next Level" */
+    font-size: 10px; /* 🔧 Giảm từ 12px */
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    font-weight: 500;
+    line-height: 1;
+}
+
+/* --- CONFIRM BUTTON --- */
+.pet-confirm-btn {
+    /* 🔧 FIX: Nút xác nhận, compact size
+       - Padding giảm
+       - Font size nhỏ hơn
+       - Flex-shrink: 0 để giữ size */
+    width: 100%;
+    padding: 10px 14px; /* 🔧 Giảm từ 14px 20px */
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 13px; /* 🔧 Giảm từ 16px */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* 🔧 Giảm từ 8px */
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.pet-confirm-btn:hover {
+    /* Hover: sáng hơn, shadow lớn hơn */
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+    transform: translateY(-2px);
+}
+
+.pet-confirm-btn:active {
+    /* Click: shrink */
+    transform: translateY(0px);
+}
+
+/* ===== PHẦN PHẢI: ITEMS & TABS (70%) ===== */
+.pet-items-section {
+    /* Cột phải: 70% chiều rộng, light mode */
+    flex: 1;
+    background: #f8f6f1;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+}
+
+/* --- NAVIGATION TABS --- */
+.pet-tabs {
+    /* Dãy tab ngang */
+    display: flex;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+}
+
+.pet-tab-btn {
+    /* Button tab */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
+}
+
+.pet-tab-btn:hover {
+    /* Hover: change color */
+    color: var(--text-main);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.pet-tab-btn.active {
+    /* Active tab: underline + color blue */
+    color: var(--primary-color);
+} 
+
+.pet-tab-btn.active::after {
+    /* Underline active indicator */
+    content: '';
+    position: absolute;
+    bottom: -16px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 3px 3px 0 0;
+}
+
+.pet-tab-btn i {
+    /* Icon trong tab */
+    font-size: 16px;
+}
+
+/* --- ITEMS GRID --- */
+.pet-items-grid {
+    /* Lưới vật phẩm */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 16px;
+    flex: 1;
+}
+
+/* Responsive: Giảm số cột trên màn hình nhỏ */
+@media (max-width: 1200px) {
+    .pet-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+    }
+}
+
+/* --- ITEM CARD --- */
+.pet-item-card {
+    /* Thẻ vật phẩm */
+    background: #fff;
+    border: 1px solid #e0d7d0;
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.pet-item-card:hover {
+    /* Hover: nâng lên, shadow lớn hơn, border sáng hơn */
+    transform: translateY(-6px);
+    border-color: var(--primary-color);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.15);
+    background: #fafbfc;
+}
+
+.pet-item-icon {
+    /* Icon vật phẩm */
+    font-size: 48px;
+    line-height: 1;
+}
+
+.pet-item-name {
+    /* Tên vật phẩm */
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.pet-item-desc {
+    /* Mô tả vật phẩm */
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* ===== RESPONSIVE: Tablet & Mobile ===== */
+@media (max-width: 1024px) {
+    .pet-dashboard {
+        flex-direction: column;
+    }
+
+    .pet-sidebar {
+        /* 🔧 Trên tablet: sidebar là header, compact */
+        flex: 0 0 auto;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 12px;
+    }
+
+    .pet-items-section {
+        /* Items phía dưới */
+        flex: 1;
+        padding: 16px 12px;
+    }
+
+    .pet-avatar-placeholder {
+        /* 🔧 Nhỏ hơn trên tablet */
+        width: 90px;
+        height: 90px;
+        font-size: 36px;
+    }
+
+    .pet-name {
+        font-size: 14px;
+    }
+
+    .pet-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .pet-sidebar {
+        /* 🔧 Mobile: full width, compact */
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 12px;
+    }
+
+    .pet-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
+    }
+
+    .pet-confirm-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+        /* 🔧 Xoá margin-top vì parent dùng space-between */
+    }
+
+    .pet-avatar-placeholder {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+    }
+
+    .pet-name {
+        font-size: 12px;
+    }
+}

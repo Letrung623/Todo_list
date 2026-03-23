@@ -13,7 +13,11 @@ USERNAME = os.getenv("DB_USER", "sa")
 PASSWORD = os.getenv("DB_PASSWORD") # Rút mật khẩu từ két sắt ra
 
 # 2. TẠO CHUỖI KẾT NỐI
-SQLALCHEMY_DATABASE_URL = f"mssql+pymssql://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}"
+# SQLALCHEMY_DATABASE_URL = f"mssql+pymssql://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}"
+
+# thiết lập cho Mysql
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:a02022007a@localhost/TaskMasterDB"
+
 
 # 3. KHỞI TẠO ENGINE
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -27,3 +31,4 @@ def get_db():
         yield db
     finally:
         db.close()
+

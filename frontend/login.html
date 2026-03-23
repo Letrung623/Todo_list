@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - TaskMaster</title>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <link rel="stylesheet" href="CSS/variables.css">
     <link rel="stylesheet" href="CSS/reset.css">
     <link rel="stylesheet" href="CSS/login.css">
 </head>
+
 <body>
     <div class="login-wrapper">
         <div class="login-card">
@@ -98,7 +100,9 @@
                             <i class="fa-solid fa-check-double"></i>
                             <input type="password" id="reg-confirm" required placeholder="Nhập lại mật khẩu...">
                         </div>
-                        <small id="pwd-error" class="hidden" style="color: var(--priority-high); margin-top: 4px; font-size: 12px;">Mật khẩu không khớp!</small>
+                        <small id="pwd-error" class="hidden"
+                            style="color: var(--priority-high); margin-top: 4px; font-size: 12px;">Mật khẩu không
+                            khớp!</small>
                     </div>
 
                     <button type="submit" class="btn-login" id="btn-register-submit" style="background-color: #10b981;">
@@ -115,27 +119,27 @@
 
     <script type="module" src="./js/auth.js"></script>
     <script type="module">
-        import { API } from './js/api.js'; 
-        
+        import { API } from './js/api.js';
+
         // ==========================================
         // 1. XỬ LÝ FORM ĐĂNG NHẬP
         // ==========================================
         const loginForm = document.getElementById('form-login'); // Đã sửa ID cho đúng
-        
+
         if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 // Nút đăng nhập đổi text thành "Đang xử lý..." cho chuyên nghiệp
                 const btnSubmit = document.getElementById('btn-submit');
                 const originalText = btnSubmit.innerHTML;
                 btnSubmit.innerHTML = '<span>Đang xử lý...</span>';
-                
+
                 const email = document.getElementById('email').value;
                 const pass = document.getElementById('password').value;
-                
+
                 const isSuccess = await API.login(email, pass);
-                
+
                 if (isSuccess) {
                     window.location.href = 'index.html';
                 } else {
@@ -180,7 +184,7 @@
                 } else {
                     alert("Đăng ký thành công! Giờ thì đăng nhập thôi.");
                     // Tự động bấm nút chuyển sang form Đăng nhập
-                    document.getElementById('link-to-login').click(); 
+                    document.getElementById('link-to-login').click();
                     // Điền sẵn email cho người dùng lười gõ lại
                     document.getElementById('email').value = email;
                 }
@@ -188,30 +192,31 @@
         }
     </script>
     import { API } from './js/api.js'; // Nhớ check lại đường dẫn tới file api.js cho đúng nhé
-    
+
     // Tìm cái form đăng nhập trong HTML của em (giả sử nó có id là 'login-form')
     // Nếu form của em có id khác thì sửa lại chỗ getElementById cho khớp nhé
-    const loginForm = document.getElementById('login-form'); 
-    
+    const loginForm = document.getElementById('login-form');
+
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Lấy giá trị từ ô input (Sửa lại id 'email' và 'password' cho khớp với HTML của em)
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            
-            // Gọi API Đăng nhập
-            const isSuccess = await API.login(email, pass);
-            
-            if (isSuccess) {
-                // Thành công thì bay vào trang chủ
-                window.location.href = 'index.html';
-            } else {
-                alert("Sai tài khoản hoặc mật khẩu rồi Hiệp ơi!");
-            }
-        });
+    loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Lấy giá trị từ ô input (Sửa lại id 'email' và 'password' cho khớp với HTML của em)
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+
+    // Gọi API Đăng nhập
+    const isSuccess = await API.login(email, pass);
+
+    if (isSuccess) {
+    // Thành công thì bay vào trang chủ
+    window.location.href = 'index.html';
+    } else {
+    alert("Sai tài khoản hoặc mật khẩu rồi Hiệp ơi!");
     }
-</>
+    });
+    }
+    </>
 </body>
+
 </html>
