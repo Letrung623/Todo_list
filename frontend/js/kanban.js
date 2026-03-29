@@ -12,6 +12,15 @@ import { openModal, closeModal } from './app.js';
 import { updateWidgets } from './widgets.js';
 import { API } from './api.js';
 import { db } from './mockData.js';
+import { VoiceManager } from './voiceManager.js';
+import { PET_VOICES } from './petVoices.js';
+
+// ✨ [MỚI] KHỞI TẠO HỆ THỐNG QUẢN LÝ ÂM THANH CHO TÁC VỤ HOÀN THÀNH
+// Nếu voiceManager chưa được tạo, tạo mới để phát âm thanh khi hoàn thành task có Priority "High"
+if (!window.voiceManager) {
+    window.voiceManager = new VoiceManager(PET_VOICES);
+    console.log('✅ VoiceManager đã được khởi tạo cho Task Complete High Priority');
+}
 
 
 // 1. TRẠNG THÁI TOÀN CỤC (Thay thế hoàn toàn file mockData.js cũ)
@@ -31,7 +40,7 @@ export function initKanban() {
     setupFilters();
     setupForms();
     setupSettingsToggle();
-    
+
     // THÊM ĐOẠN NÀY VÀO: Lôi thông tin ra ốp lên giao diện
     const savedName = localStorage.getItem('user_name');
     const savedEmail = localStorage.getItem('user_email');
@@ -42,7 +51,7 @@ export function initKanban() {
         document.getElementById('display-avatar').innerText = savedName.charAt(0).toUpperCase();
     }
 
-    loadDataAndRenderKanban(); 
+    loadDataAndRenderKanban();
 }
 
 // ==========================================
@@ -60,7 +69,7 @@ export async function loadDataAndRenderKanban() {
             const tasks = await API.getTasks(board.BoardID);
             if (tasks) currentTasks = currentTasks.concat(tasks);
         }
-        
+
         // Có Data thật rồi thì vẽ lên màn hình thôi!
         renderKanban();
     } catch (error) {
@@ -90,7 +99,7 @@ export function renderKanban() {
         if (currentFilter !== 'all') boardTasks = boardTasks.filter(t => t.PriorityLevel === currentFilter);
         if (settings.hideCompletedTasks) boardTasks = boardTasks.filter(t => t.Status !== 'completed');
         if (currentFilter !== 'all' && boardTasks.length === 0) {
-            return; 
+            return;
         }
         // --- TẦNG LỌC 2: ẨN TASK ĐÃ XONG THEO LỊCH ---
         if (currentDateFilter) {
@@ -117,7 +126,7 @@ export function renderKanban() {
         }
 
         const isBoardCompleted = boardTasks.length > 0 && boardTasks.every(t => t.Status === 'completed');
-        
+
         const boardHTML = createBoardHTML(board, boardTasks);
 
         if (isBoardCompleted) completedBoards.push(boardHTML);
@@ -222,23 +231,49 @@ function createTaskHTML(task) {
 // ==========================================
 function attachBoardEvents() {
     const kanbanView = document.getElementById('view-kanban');
-    // TÍCH CHECKBOX: Đã nối thẳng vào SQL Server bằng PATCH
+
+    // ✨ [CẬP NHẬT] TÍCH CHECKBOX: Đã nối thẳng vào SQL Server + Logic Phát Âm Thanh
+    // ĐIỀU KIỆN: Chỉ phát âm thanh khi:
+    // 1. User nhấn vào dấu tích để đánh dấu hoàn thành task
+    // 2. Mức độ ưu tiên (Priority) của task là "High"
     kanbanView.querySelectorAll('.toggle-task-status').forEach(checkbox => {
         checkbox.addEventListener('change', async (e) => {
             const taskId = parseInt(e.target.dataset.taskId);
             const newStatus = e.target.checked ? 'completed' : 'pending';
-            
+
+            // ✨ [MỚI] TÌM KIẾM TASK OBJECT ĐỂ LẤY PRIORITY
+            // Duyệt qua currentTasks để tìm task có TaskID trùng khớp
+            const task = currentTasks.find(t => t.TaskID === taskId);
+
+            // ✨ LOGIC PHÁT ÂM THANH THEO PRIORITY (High/Medium/Low)
+            if (newStatus === 'completed' && task && task.PriorityLevel) {
+                const priority = task.PriorityLevel.toLowerCase();
+                let soundKey = '';
+
+                if (priority === 'high') soundKey = 'taskCompleteHigh';
+                else if (priority === 'medium' || priority === 'average') soundKey = 'taskCompleteAverage';
+                else if (priority === 'low' || priority === 'easy') soundKey = 'taskCompleteEasy';
+
+                if (soundKey) {
+                    console.log(`🎉 Task "${task.Title}" hoàn thành (${priority}) → ${soundKey}`);
+                    window.voiceManager.play('default', soundKey, {
+                        volume: 0.8,
+                        interrupt: false
+                    });
+                }
+            }
+
             // Gọi API báo cho Backend biết trạng thái mới
             await API.updateTaskStatus(taskId, newStatus);
-            
+
             // Render lại màn hình để nó gạch ngang chữ hoặc chuyển sang cột Completed
-            await loadDataAndRenderKanban(); 
+            await loadDataAndRenderKanban();
         });
     });
 
     // NÚT XÓA BẢNG: Đã nối API cực xịn
     kanbanView.querySelectorAll('.btn-delete-board').forEach(btn => btn.addEventListener('click', async (e) => {
-        if(confirm("CẢNH BÁO: Bạn có chắc muốn xóa Bảng này và TOÀN BỘ công việc bên trong không?")) {
+        if (confirm("CẢNH BÁO: Bạn có chắc muốn xóa Bảng này và TOÀN BỘ công việc bên trong không?")) {
             const boardId = e.currentTarget.dataset.id;
             await API.deleteBoard(boardId);
             await loadDataAndRenderKanban(); // Xóa xong tự động làm tươi màn hình
@@ -247,12 +282,12 @@ function attachBoardEvents() {
 
     // NÚT XÓA TASK: Đã nối API DELETE
     kanbanView.querySelectorAll('.btn-delete-task').forEach(btn => btn.addEventListener('click', async (e) => {
-        if(confirm("Bạn có chắc muốn xóa công việc này khỏi SQL Server không?")) {
+        if (confirm("Bạn có chắc muốn xóa công việc này khỏi SQL Server không?")) {
             const taskId = e.currentTarget.dataset.id;
             try {
                 await fetch(`http://127.0.0.1:8000/api/tasks/${taskId}`, { method: 'DELETE' });
                 // Xóa xong thì làm tươi lại trang
-                loadDataAndRenderKanban(); 
+                loadDataAndRenderKanban();
             } catch (error) {
                 console.error("Lỗi xóa task:", error);
             }
@@ -263,7 +298,7 @@ function attachBoardEvents() {
     kanbanView.querySelectorAll('.btn-edit-board').forEach(btn => btn.addEventListener('click', (e) => {
         const boardId = parseInt(e.currentTarget.dataset.id);
         const board = currentBoards.find(b => b.BoardID === boardId);
-        if(board) {
+        if (board) {
             document.getElementById('edit-board-id').value = board.BoardID;
             document.getElementById('board-title').value = board.Title;
             openModal(document.getElementById('modal-add-board'));
@@ -274,7 +309,7 @@ function attachBoardEvents() {
     kanbanView.querySelectorAll('.btn-edit-task').forEach(btn => btn.addEventListener('click', (e) => {
         const taskId = parseInt(e.currentTarget.dataset.id);
         const task = currentTasks.find(t => t.TaskID === taskId);
-        if(task) {
+        if (task) {
             document.getElementById('edit-task-id').value = task.TaskID;
             document.getElementById('task-board-id').value = task.BoardID;
             document.getElementById('task-title').value = task.Title;
@@ -289,7 +324,7 @@ function attachBoardEvents() {
     // NÚT THÊM TASK VÀO ĐÚNG BẢNG ĐÓ
     kanbanView.querySelectorAll('.btn-add-task-board').forEach(btn => btn.addEventListener('click', (e) => {
         document.getElementById('task-board-id').value = e.currentTarget.dataset.boardId;
-        document.getElementById('edit-task-id').value = ''; 
+        document.getElementById('edit-task-id').value = '';
         document.getElementById('form-add-task').reset();
         openModal(document.getElementById('modal-add-task'));
     }));
@@ -299,13 +334,13 @@ function attachBoardEvents() {
 
 function setupForms() {
     // 0. BẮT SỰ KIỆN MỞ MODAL CHO NÚT "THÊM CỘT MỚI"
-    const btnOpenAddBoard = document.querySelector('.btn-primary'); 
+    const btnOpenAddBoard = document.querySelector('.btn-primary');
     if (btnOpenAddBoard) {
         btnOpenAddBoard.addEventListener('click', () => {
             const formBoard = document.getElementById('form-add-board');
-            if(formBoard) formBoard.reset(); 
-            document.getElementById('edit-board-id').value = ''; 
-            openModal(document.getElementById('modal-add-board')); 
+            if (formBoard) formBoard.reset();
+            document.getElementById('edit-board-id').value = '';
+            openModal(document.getElementById('modal-add-board'));
         });
     }
 
@@ -322,34 +357,34 @@ function setupForms() {
     // 1. FORM THÊM / SỬA BẢNG DỰ ÁN
     // ========================================================
     const formAddBoard = document.getElementById('form-add-board');
-    if(formAddBoard) {
+    if (formAddBoard) {
         formAddBoard.addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit-board-id').value;
             const title = document.getElementById('board-title').value;
-            
+
             const colorElement = document.querySelector('.color-option.selected');
             const color = colorElement ? `pastel-${colorElement.dataset.color}` : 'pastel-blue'; // Mặc định nếu quên chọn
 
             try {
-                if(editId) {
+                if (editId) {
                     // Sửa bảng
                     await API.updateBoard(editId, { Title: title, Color: color, OrderIndex: 0 });
                 } else {
                     // TẠO BẢNG MỚI (Dùng API.js để tự động gửi Vòng tay VIP và gán đúng chủ nhân)
-                    await API.createBoard({ 
-                        Title: title, 
-                        Color: color, 
-                        OrderIndex: currentBoards.length + 1 
+                    await API.createBoard({
+                        Title: title,
+                        Color: color,
+                        OrderIndex: currentBoards.length + 1
                     });
                 }
-                
+
                 await loadDataAndRenderKanban(); // Làm tươi màn hình
                 closeModal(document.getElementById('modal-add-board'));
-                e.target.reset(); 
+                e.target.reset();
                 document.getElementById('edit-board-id').value = '';
-            } catch (err) { 
-                console.error("Lỗi xử lý bảng:", err); 
+            } catch (err) {
+                console.error("Lỗi xử lý bảng:", err);
             }
         });
     }
@@ -358,19 +393,19 @@ function setupForms() {
     // 2. FORM THÊM / SỬA TASK (CÔNG VIỆC)
     // ========================================================
     const formAddTask = document.getElementById('form-add-task');
-    if(formAddTask) {
+    if (formAddTask) {
         formAddTask.addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = document.getElementById('edit-task-id').value;
-            
+
             const title = document.getElementById('task-title').value;
             const desc = document.getElementById('task-desc').value;
             const priority = document.getElementById('task-priority').value;
             const startDate = document.getElementById('task-start-date').value;
             const endDate = document.getElementById('task-end-date').value;
-            
+
             try {
-                if(editId) {
+                if (editId) {
                     // SỬA TASK
                     // Lưu ý: Thầy bỏ dòng Status: 'pending' đi, để nó không làm reset trạng thái Task đang bị gạch ngang của em
                     const updateTaskData = {
@@ -394,10 +429,10 @@ function setupForms() {
                     };
                     await API.createTask(newTaskData);
                 }
-                
+
                 await loadDataAndRenderKanban(); // Kéo DB về vẽ lại màn hình
                 closeModal(document.getElementById('modal-add-task'));
-                e.target.reset(); 
+                e.target.reset();
                 document.getElementById('edit-task-id').value = '';
             } catch (error) {
                 console.error("Lỗi xử lý Task:", error);
@@ -423,7 +458,7 @@ function setupFilters() {
 
 function setupSettingsToggle() {
     const toggle = document.getElementById('toggle-task-drag');
-    if(toggle) {
+    if (toggle) {
         toggle.checked = settings.enableTaskDragDrop;
         toggle.addEventListener('change', (e) => {
             settings.enableTaskDragDrop = e.target.checked;
@@ -437,21 +472,21 @@ export function setDateFilter(dateStr) {
     const badge = document.getElementById('selected-date-badge');
     const text = document.getElementById('selected-date-text');
 
-    if(dateStr && badge && text) {
+    if (dateStr && badge && text) {
         badge.classList.remove('hidden');
         const parts = dateStr.split('-');
         text.innerText = parts[2] + '/' + parts[1];
     } else if (badge) {
         badge.classList.add('hidden');
     }
-    renderKanban(); 
+    renderKanban();
 }
 
 // ==========================================
 // MA THUẬT KÉO THẢ (DRAG & DROP) HTML5
 // ==========================================
 // Biến cờ toàn cục để biết đang kéo cái gì (Task hay Board)
-let draggedItemType = null; 
+let draggedItemType = null;
 
 function setupDragAndDrop() {
     const kanbanView = document.getElementById('view-kanban');
@@ -465,12 +500,12 @@ function setupDragAndDrop() {
         task.addEventListener('dragstart', (e) => {
             draggedItemType = 'task'; // Phất cờ báo hiệu đang kéo Task
             e.dataTransfer.setData('text/plain', task.dataset.taskId);
-            
+
             // 🌟 Lệnh này CỰC KỲ QUAN TRỌNG: Ngăn chặn thao tác kéo lan ra cái Bảng ở ngoài
-            e.stopPropagation(); 
-            
+            e.stopPropagation();
+
             // Dùng setTimeout để mượt UI khi kéo
-            setTimeout(() => task.style.opacity = '0.5', 0); 
+            setTimeout(() => task.style.opacity = '0.5', 0);
         });
 
         task.addEventListener('dragend', (e) => {
@@ -498,7 +533,7 @@ function setupDragAndDrop() {
 
         // KHI LƯỚT QUA (Giữ nguyên của em)
         column.addEventListener('dragover', (e) => {
-            e.preventDefault(); 
+            e.preventDefault();
             column.style.transform = 'scale(1.02)';
         });
 
@@ -516,11 +551,11 @@ function setupDragAndDrop() {
 
             const droppedId = e.dataTransfer.getData('text/plain');
             const targetColumn = e.target.closest('.board-column');
-            
+
             // Nếu thả ra ngoài cột -> Báo lỗi ra màn hình F12 ngay!
             if (!targetColumn) {
                 console.log("❌ Thả trượt rồi! Bạn phải thả chính xác vào bên trong một Cột.");
-                return; 
+                return;
             }
 
             const targetBoardId = targetColumn.dataset.boardId;
@@ -529,12 +564,12 @@ function setupDragAndDrop() {
             if (draggedItemType === 'task') {
                 const taskId = droppedId;
                 const newBoardId = targetBoardId;
-                
+
                 console.log(`🚀 Đang kéo Task ID: ${taskId} thả vào Bảng ID: ${newBoardId}`);
 
                 if (taskId && newBoardId) {
                     const task = currentTasks.find(t => t.TaskID == taskId);
-                    
+
                     if (task && (task.BoardID != newBoardId || task.Status === 'completed')) {
                         if (task.BoardID != newBoardId) {
                             await API.moveTask(parseInt(taskId), parseInt(newBoardId));
@@ -546,12 +581,12 @@ function setupDragAndDrop() {
                         console.log("✅ Hồi sinh Task thành công!");
                     }
                 }
-            } 
+            }
             // KỊCH BẢN B: ĐANG THẢ BẢNG
             else if (draggedItemType === 'board') {
-                const sourceBoardId = droppedId; 
-                const destBoardId = targetBoardId; 
-                
+                const sourceBoardId = droppedId;
+                const destBoardId = targetBoardId;
+
                 console.log(`🚀 Đang tráo Bảng ID: ${sourceBoardId} với Bảng ID: ${destBoardId}`);
 
                 if (sourceBoardId !== destBoardId) {

@@ -1,31 +1,57 @@
 /* ==========================================================================
    FILE: pet.js
    KẾT NỐI: index.html (#view-pet), app.js
-   MỤC ĐÍCH: Quản lý thú cưng, tab switching, items grid, event handlers
+   MỤC ĐÍCH: Quản lý Dashboard Pet (Ảnh đại diện tĩnh, thống kê, items, settings)
+   
+   ✅ [FIX] ENTITY SEPARATION - QUAN TRỌNG:
+   ================================================
+   
+   FILE NÀY CHỈ QUẢN LÝ AVATAR TĨNH (pet-avatar-image) TRONG DASHBOARD:
+   - ✅ Hiển thị tĩnh (display only)
+   - ✅ Tab switching, items grid
+   - ✅ Pet stats updates (level, exp, gold, name)
+   - ✅ Button handlers (confirm, settings)
+   
+   FILE NÀY KHÔNG CÓ:
+   - ❌ Drag/drop logic (dragging chỉ cho mascot.js)
+   - ❌ Click voice play logic (voice chỉ cho mascot.js)
+   - ❌ Mouse event listeners trên avatar (để tránh event bubbling)
+   
+   AVATAR ID:
+   - pet-avatar-image (CHỈ HIỂN THỊ, KHÔNG CÓ LOGIC)
+   
+   LINH VẬT CHÍNH ID:
+   - mascot-image (ĐỦ HỌC LOGIC: drag, click, voice, animation)
+   - Được quản lý bởi: mascot.js + voiceManager.js
+   
    ========================================================================== */
 
 /**
  * initPet()
  * Khởi tạo Pet Dashboard: Tab switching, item rendering, event listeners
+ * 
+ * ✅ CHỈNHH DÀNH CHO AVATAR TĨNH (DASHBOARD), KHÔNG PHẢI LINH VẬT CHÍNH
  */
 export function initPet() {
-  console.log('🐾 Initializing Pet Dashboard...');
+  console.log('🐾 Initializing Pet Dashboard (Avatar - Static Display Only)...');
 
-  // BƯỚC 1: Handle Tab Switching
+  // BƯỚC 1: Handle Tab Switching (tab buttons TRONG dashboard)
   initPetTabs();
 
-  // BƯỚC 2: Render sample items (tạm thời)
+  // BƯỚC 2: Render sample items (items trong tab)
   renderPetItems('costume');
 
-  // BƯỚC 3: Handle Confirm Button
+  // BƯỚC 3: Handle Confirm Button (button TRONG dashboard)
   initPetConfirmBtn();
 
-  console.log('🐾 Pet Dashboard ready!');
+  console.log('🐾 Pet Dashboard ready! (Avatar tĩnh, không có drag/voice)');
 }
 
 /**
  * initPetTabs()
- * Xử lý sự kiện click trên các tab và tab switching
+ * Xử lý sự kiện click trên các tab TRONG dashboard
+ * 
+ * ✅ CHỈ XỬ LÝ TABS, KHÔNG KÍCH HOẠT LINH VẬT CHÍNH
  */
 function initPetTabs() {
   const tabBtns = document.querySelectorAll('.pet-tab-btn');
@@ -52,6 +78,8 @@ function initPetTabs() {
  * renderPetItems(tabName)
  * Render items grid dựa trên tab được chọn
  * @param {string} tabName - Tên tab: 'costume', 'voice', 'evolution', 'settings'
+ * 
+ * ✅ CHỈ RENDER VÀ HIỂN THỊ, KHÔNG CÓ LOGIC KÉO HAY PHÁT ÂM THANH
  */
 function renderPetItems(tabName) {
   const itemsGrid = document.getElementById('pet-items-grid');
@@ -122,7 +150,9 @@ function renderPetItems(tabName) {
 
 /**
  * initPetConfirmBtn()
- * Xử lý sự kiện click nút "Xác nhận"
+ * Xử lý sự kiện click nút "Xác nhận" (button TRONG dashboard)
+ * 
+ * ✅ CHỈ XỬ LÝ BUTTON TRONG DASHBOARD, KHÔNG ẢNH HƯởNG LINH VẬT CHÍNH
  */
 function initPetConfirmBtn() {
   const confirmBtn = document.getElementById('btn-pet-confirm');
@@ -130,7 +160,7 @@ function initPetConfirmBtn() {
   if (confirmBtn) {
     confirmBtn.addEventListener('click', () => {
       // Placeholder: có thể thêm logic xác nhận ở đây
-      console.log('🐾 Pet Confirmed!');
+      console.log('🐾 Pet Dashboard Confirmed! (Không ảnh hưởng Linh vật chính)');
 
       // Tạo một hiệu ứng feedback cho người dùng
       confirmBtn.style.transform = 'scale(0.95)';

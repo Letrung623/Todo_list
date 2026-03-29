@@ -77,20 +77,42 @@
 }
 
 .pet-avatar-placeholder {
-    /* 🔧 FIX: Khung ảnh placeholder - giảm 25% size
-       Từ 180x180 → 130x130 (compact) */
+    /* 🔧 CONTAINER: Khung chân dung nhân vật - chữ nhật đứng bo góc */
+    position: relative;
     width: 130px;
-    height: 130px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-lg);
+    height: 160px; /* 🔧 Tỷ lệ đứng 130x160 */
+    background: linear-gradient(135deg, #2a2a3a 0%, #1a1a2e 100%); /* 🔧 Nền tối gradient */
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px; /* 🔧 Bo góc mềm mại */
+    overflow: hidden; /* 🔧 Cắt ảnh tràn ra ngoài */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 48px; /* 🔧 Giảm từ 64px */
-    color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1); /* 🔧 Shadow sâu */
     transition: all 0.3s ease;
-    flex-shrink: 0; /* 🔧 Đảm bảo size không bị áp dụng */
+    flex-shrink: 0;
+}
+
+.pet-avatar-placeholder::before {
+    /* 🔧 OVERLAY: Lớp phủ mờ cho text dễ đọc nếu đè lên */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(transparent 60%, rgba(0, 0, 0, 0.4) 100%);
+    pointer-events: none;
+}
+
+#pet-avatar-image {
+    /* 🔧 ẢNH NHÂN VẬT: Thu nhỏ vừa khung, giữ tỷ lệ */
+    width: 90%;
+    height: 90%;
+    object-fit: cover; /* 🔧 Cắt vừa khung, ưu tiên khuôn mặt */
+    object-position: center top; /* 🔧 Ưu tiên đầu/mặt */
+    border-radius: 16px; /* 🔧 Bo góc bên trong */
+    transition: all 0.3s ease;
 }
 
 .pet-avatar-placeholder:hover {
